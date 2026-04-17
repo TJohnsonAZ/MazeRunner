@@ -12,9 +12,10 @@ PyQt6
 ### Usage
 Once all requirements are satisfied, run the program with
 
-```python maze_runner.py -s [size] -d [direction] --verbose/--no-verbose```
+```python maze_runner.py -s [size] -a [algorithm] -d [direction] --verbose/--no-verbose```
 
-where size represents the size of the maze, direction indicates whether the maze will be searched from one direction or two similtaniously, and verbose determines whether the program will output verbose printing for each maze traversal step.
+where size represents the size of the maze, algorithm represents the tree search algorithm to be used when traversing the maze, direction indicates whether the maze will be searched from one direction or two similtaniously, and verbose determines whether the program will output verbose printing for each maze traversal step.
 
 Size options are: ```simple, moderate, difficult```.\
+Algorithm options are ```depth-first, breadth-first```.\
 Direction options are ```single, bidirectional```.
