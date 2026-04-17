@@ -8,6 +8,10 @@ from PIL import Image  # used to get the color of pixels for wall detection
 START = True
 END = False
 
+# constants for search algorithm flags
+DEPTH_FIRST = 0
+BREADTH_FIRST = 1
+A_STAR = 2
 
 # class to keep track of individual nodes in the maze graph
 class Node:

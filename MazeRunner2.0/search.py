@@ -1,9 +1,9 @@
 # This file contains search algorithms and utility functions to support them
-from graph_utils import END, START, Edge, Node, draw_edge
+from graph_utils import BREADTH_FIRST, DEPTH_FIRST, END, START, Edge, Node, draw_edge
 
 
 """
-Uses bi-directional depth-first search to traverse the maze from start to finish.
+Uses bi-directional depth-first, breadth-first, or A* search to traverse the maze from start to finish.
 Bi-directional search maintains two trees, one starting from maze start and the other from maze goal.
 Success is determined by the detection of a frontier overlap in both trees.
 Optional verbose printing allows visible output of each traversal step.
@@ -18,6 +18,8 @@ start :
     Node object for first tree to begin search from.
 end :
     Node object for second tree to begin search from.
+search_type:
+    Integer constant indicating the search algorithm to use.
 verbose :
     Boolean flag to enable or disable verbose printing.
 
@@ -26,7 +28,7 @@ Returns
 :
     Node object of intersect point with parent trees leading back to maze start and goal.
 """
-def bi_directional_depth_first_search(edges: list[Edge], node_map: list[list[Node]], start: Node, end: Node, verbose: bool) -> Node:
+def bi_directional_search(edges: list[Edge], node_map: list[list[Node]], start: Node, end: Node, search_type: int, verbose: bool) -> Node:
     # initialize data structures
     start_frontier: list[Node] = []
     start_explored: list[str] = []
@@ -80,6 +82,9 @@ def bi_directional_depth_first_search(edges: list[Edge], node_map: list[list[Nod
             new_children = find_children(node_map, edges, current, end_explored)
 
             
+        if search_type == DEPTH_FIRST:
+            new_children.reverse()
+
         # insert children to frontier
         if len(new_children) > 0:
             if verbose:
@@ -90,14 +95,30 @@ def bi_directional_depth_first_search(edges: list[Edge], node_map: list[list[Nod
                     child.set_parent(current, START)
                     if verbose:
                         print(child.label + " ", end="")
-                    start_frontier.insert(0, child)
+ 
+                    # insert in position appropriate for algorithm
+                    if search_type == DEPTH_FIRST:
+                        start_frontier.insert(0, child)
+                    elif search_type == BREADTH_FIRST:
+                        start_frontier.append(child)
+                    # not yet implemented
+                    else:
+                        start_frontier.insert(0, child)
+                        
                 else:
                     child.set_parent(current, END)
                     if verbose:
                         print(child.label + " ", end="")
-                    end_frontier.insert(0, child)
-                    
 
+                    # insert in position appropriate for algorithm
+                    if search_type == DEPTH_FIRST:
+                        end_frontier.insert(0, child)
+                    elif search_type == BREADTH_FIRST:
+                        end_frontier.append(child)
+                    # not yet implemented
+                    else:
+                        end_frontier.insert(0, child)
+                    
         if turn == START:
             if verbose:
                 print("\ncurrent frontier from start: ", end="")
@@ -120,77 +141,6 @@ def bi_directional_depth_first_search(edges: list[Edge], node_map: list[list[Nod
         turn = not turn
 
     raise Exception("Intersection not found.")
- 
-
-"""
-Uses depth-first search to traverse the maze from start to finish.
-Optional verbose printing allows visible output of each traversal step.
-
-Parameters
-----------
-edges : 
-    List of all Edges between Nodes for inserting children to search tree
-node_map :
-    2D list of all Nodes in the maze to be traversed during search.
-start :
-    Node object to begin search from.
-end :
-    Node object to search for.
-verbose :
-    Boolean flag to enable or disable verbose printing.
-
-Returns
--------
-:
-    Node object of found goal node with parent tree leading back to maze start.
-"""
-def depth_first_search(edges: list[Edge], node_map: list[list[Node]], start: Node, end: Node, verbose: bool) -> Node:
-    # initialize data structures
-    frontier: list[Node] = []
-    explored: list[str] = []
-
-    # insert first node to frontier
-    frontier.append(start)
-
-    print("\nExploring from " + start.label + " to " + end.label, end="")
-
-    # loop while frontier not empty
-    while len(frontier) != 0:
-        current = frontier[0]
-        if verbose:
-            print("\n\nexploring node: " + current.label, end="")
-
-        # return goal if found
-        if current.label == end.label:
-            return current
-
-        # move current element from frontier to explored
-        frontier.remove(current)
-        explored.append(current.label)
-
-        # find children of current node
-        new_children = find_children(node_map, edges, current, explored)
-
-        # insert new children to frontier
-        if len(new_children) > 0:
-            if verbose:
-                print("\ninserting new children: ", end="")
-
-            for child in new_children:
-                if verbose:
-                    print(child.label + " ", end="")
-                child.set_parent(current, START)
-                frontier.insert(0, child)
-
-        if verbose:
-            print("\ncurrent frontier: ", end="")
-            for node in frontier:
-                print(node.label + " ", end="")
-
-        # recolor the newly traversed edge
-        draw_edge(edges, frontier[0], 'from_start')
-    
-    raise Exception("Goal not found.")
 
 
 """
@@ -237,8 +187,6 @@ def find_children(node_map: list[list[Node]], edges: list[Edge], current_node: N
 
             insert_index += 1
 
-    new_children.reverse()
-
     return new_children
 
 
@@ -264,3 +212,88 @@ def find_node(node_map: list[list[Node]], node_label: str) -> Node | None:
                 return node_map[out_index][in_index]
 
     return None
+
+
+"""
+Uses depth-first, breadth-first, or A* search to traverse the maze from start to finish.
+Optional verbose printing allows visible output of each traversal step.
+
+Parameters
+----------
+edges : 
+    List of all Edges between Nodes for inserting children to search tree
+node_map :
+    2D list of all Nodes in the maze to be traversed during search.
+start :
+    Node object to begin search from.
+end :
+    Node object to search for.
+search_type:
+    Integer constant indicating the search algorithm to use.
+verbose :
+    Boolean flag to enable or disable verbose printing.
+
+Returns
+-------
+:
+    Node object of found goal node with parent tree leading back to maze start.
+"""
+def search(edges: list[Edge], node_map: list[list[Node]], start: Node, end: Node, search_type: int, verbose: bool) -> Node:
+    # initialize data structures
+    frontier: list[Node] = []
+    explored: list[str] = []
+
+    # insert first node to frontier
+    frontier.append(start)
+
+    print("\nExploring from " + start.label + " to " + end.label, end="")
+
+    # loop while frontier not empty
+    while len(frontier) != 0:
+        current = frontier[0]
+        if verbose:
+            print("\n\nexploring node: " + current.label, end="")
+
+        # return goal if found
+        if current.label == end.label:
+            return current
+
+        # move current element from frontier to explored
+        frontier.remove(current)
+        explored.append(current.label)
+
+        # find children of current node
+        new_children = find_children(node_map, edges, current, explored)
+
+        if search_type == DEPTH_FIRST:
+            new_children.reverse()
+
+        # insert new children to frontier
+        if len(new_children) > 0:
+            if verbose:
+                print("\ninserting new children: ", end="")
+
+            for child in new_children:
+                if verbose:
+                    print(child.label + " ", end="")
+                child.set_parent(current, START)
+
+                # insert in position appropriate for algorithm
+                if search_type == DEPTH_FIRST:
+                    frontier.insert(0, child)
+                elif search_type == BREADTH_FIRST:
+                    frontier.append(child)
+                # not yet implemented
+                else:
+                    frontier.insert(0, child)
+
+        if verbose:
+            print("\ncurrent frontier: ", end="")
+            for node in frontier:
+                print(node.label + " ", end="")
+
+        # recolor the newly traversed edge
+        draw_edge(edges, frontier[0], 'from_start')
+    
+    raise Exception("Goal not found.")
+

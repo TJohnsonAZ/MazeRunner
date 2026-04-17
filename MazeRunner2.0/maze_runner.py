@@ -5,8 +5,8 @@ import matplotlib.image as plotimage
 import matplotlib.pyplot as plt  # library used to visualize and discretize the maze
 from PIL import Image  # used to get the color of pixels for wall detection
 
-from graph_utils import END, START, Edge, Node, check_wall, draw_edge, find_closest, trace_path
-from search import bi_directional_depth_first_search, depth_first_search
+from graph_utils import A_STAR, BREADTH_FIRST, DEPTH_FIRST, END, START, Edge, Node, check_wall, draw_edge, find_closest, trace_path
+from search import bi_directional_search, search
 
 # constants for maze file locations
 SIMPLE_MAZE = 'simple_maze.png'
@@ -27,10 +27,16 @@ def main() -> None:
         help='The size of the maze to solve: \'simple\', \'moderate\', \'difficult\''
     )
     parser.add_argument(
+        '-a', '--algorithm',
+        type=str,
+        required=True,
+        help='The graph search algorithm to use in maze traversal: \'depth-first\', \'breadth-first\', \'A*\''
+    )
+    parser.add_argument(
         '-d', '--direction',
         type=str,
         required=True,
-        help='The type of search to be conducted: \'single\', \'bidirectional\''
+        help='The type of search to be conducted: \'single\', \'bi-directional\''
     )
     parser.add_argument(
         '-v', '--verbose',
@@ -49,11 +55,20 @@ def main() -> None:
         maze_type = DIFFICULT_MAZE
     else:
         raise ValueError("Invalid maze. Maze options are: simple, moderate, difficult")
+    
+    if (str(args.algorithm).lower() == 'depth-first'):
+        algorithm = DEPTH_FIRST
+    elif str(args.algorithm.lower() == 'breadth-first'):
+        algorithm = BREADTH_FIRST
+    elif str(args.algorithm.lower() == 'a*'):
+        algorithm = A_STAR
+    else:
+        raise ValueError("Invalid alogrithm. Options are: depth-first, breadth-first, A*")
 
     # get search type from command-line arguments
     if str(args.direction) == 'single':
         search_type = 'single'
-    elif str(args.direction) == 'bidirectional':
+    elif str(args.direction) == 'bi-directional':
         search_type = 'bi-directional'
     else:
         raise ValueError("Invalid serach type. Options are: single, bidirectional")
@@ -89,7 +104,7 @@ def main() -> None:
 
     # search maze from start to goal and trace path (single)
     if search_type == 'single':
-        depth_first_search(edges, node_map, start_node, end_node, verbose)
+        search(edges, node_map, start_node, end_node, algorithm, verbose)
         path = trace_path(end_node, START)
 
         # draw the successful path graphically
@@ -104,7 +119,7 @@ def main() -> None:
 
     # search maze from start to goal and trace path (bidirectional)
     else:
-        intersect_node = bi_directional_depth_first_search(edges, node_map, start_node, end_node, verbose)
+        intersect_node = bi_directional_search(edges, node_map, start_node, end_node, algorithm, verbose)
 
         path_from_start = trace_path(intersect_node, START)
         path_from_end = trace_path(intersect_node, END)
