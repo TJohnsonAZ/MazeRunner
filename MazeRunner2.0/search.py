@@ -1,5 +1,5 @@
 # This file contains search algorithms and utility functions to support them
-from graph_utils import BREADTH_FIRST, DEPTH_FIRST, END, START, Edge, Node, draw_edge
+from graph_utils import BREADTH_FIRST, DEPTH_FIRST, END, START, Node, draw_edge
 
 
 """
@@ -28,7 +28,7 @@ Returns
 :
     Node object of intersect point with parent trees leading back to maze start and goal.
 """
-def bi_directional_search(edges: list[Edge], node_map: list[list[Node]], start: Node, end: Node, search_type: int, verbose: bool) -> Node:
+def bi_directional_search(edges: dict[str, list[str]], node_map: list[list[Node]], start: Node, end: Node, search_type: int, verbose: bool) -> Node:
     # initialize data structures
     start_frontier: list[Node] = []
     start_explored: list[str] = []
@@ -126,7 +126,8 @@ def bi_directional_search(edges: list[Edge], node_map: list[list[Node]], start: 
                     print(node.label + " ", end="")
 
             # recolor the newly traversed edge
-            draw_edge(edges, start_frontier[0], 'from_start')
+            if start_frontier[0].parent:
+                draw_edge(start_frontier[0], start_frontier[0].parent, 'from_start')
         
         else:
             if verbose:
@@ -135,7 +136,8 @@ def bi_directional_search(edges: list[Edge], node_map: list[list[Node]], start: 
                     print(node.label + " ", end="")
 
             # recolor the newly traversed edge
-            draw_edge(edges, end_frontier[0], 'from_end')
+            if end_frontier[0].end_parent:
+                draw_edge(end_frontier[0], end_frontier[0].end_parent, 'from_end')
 
         # change turn
         turn = not turn
@@ -164,28 +166,24 @@ Returns
 :
     List of Nodes containing the current Node's children (if any).
 """
-def find_children(node_map: list[list[Node]], edges: list[Edge], current_node: Node, explored: list[str]) -> list[Node]:
+def find_children(node_map: list[list[Node]], edges: dict[str, list[str]], current_node: Node, explored: list[str]) -> list[Node]:
     new_children: list[Node] = []
-    new_node: Node | None = None
 
-    # search for edges connected to unexplored nodes
-    for edge in edges:
-        if edge.start_label == current_node.label and edge.end_label not in explored:
-            new_node = find_node(node_map, edge.end_label)
-        elif edge.end_label == current_node.label and edge.start_label not in explored:
-            new_node = find_node(node_map, edge.start_label)
+    for child_name in edges[current_node.label]:
+        if child_name not in explored:
+            child = find_node(node_map, child_name)
 
-        # insert new nodes into alphabetically sorted list
-        insert_index = 0
-        while new_node and insert_index <= len(new_children):
-            if insert_index == len(new_children):
-                new_children.append(new_node)
-                new_node = None
-            elif new_node.label < new_children[insert_index].label:
-                new_children.insert(insert_index, new_node)
-                new_node = None
+            # insert new nodes into alphabetically sorted list
+            insert_index = 0
+            while child and insert_index <= len(new_children):
+                if insert_index == len(new_children):
+                    new_children.append(child)
+                    child = None
+                elif child.label < new_children[insert_index].label:
+                    new_children.insert(insert_index, child)
+                    child = None
 
-            insert_index += 1
+                insert_index += 1
 
     return new_children
 
@@ -238,7 +236,7 @@ Returns
 :
     Node object of found goal node with parent tree leading back to maze start.
 """
-def search(edges: list[Edge], node_map: list[list[Node]], start: Node, end: Node, search_type: int, verbose: bool) -> Node:
+def search(edges: dict[str, list[str]], node_map: list[list[Node]], start: Node, end: Node, search_type: int, verbose: bool) -> Node:
     # initialize data structures
     frontier: list[Node] = []
     explored: list[str] = []
@@ -293,7 +291,8 @@ def search(edges: list[Edge], node_map: list[list[Node]], start: Node, end: Node
                 print(node.label + " ", end="")
 
         # recolor the newly traversed edge
-        draw_edge(edges, frontier[0], 'from_start')
+        if frontier[0].parent:
+            draw_edge(frontier[0], frontier[0].parent, 'from_start')
     
     raise Exception("Goal not found.")
 

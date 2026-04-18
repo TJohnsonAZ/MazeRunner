@@ -1,11 +1,12 @@
 # This file contains the main driver for the maze runner programer and maze setup functions
-import argparse  # used to retrieve command-line arguments
+import argparse
+from collections import defaultdict  # used to retrieve command-line arguments
 
 import matplotlib.image as plotimage
 import matplotlib.pyplot as plt  # library used to visualize and discretize the maze
 from PIL import Image  # used to get the color of pixels for wall detection
 
-from graph_utils import A_STAR, BREADTH_FIRST, DEPTH_FIRST, END, START, Edge, Node, check_wall, draw_edge, find_closest, trace_path
+from graph_utils import A_STAR, BREADTH_FIRST, DEPTH_FIRST, END, START, Node, check_wall, draw_edge, find_closest, trace_path
 from search import bi_directional_search, search
 
 # constants for maze file locations
@@ -109,7 +110,7 @@ def main() -> None:
 
         # draw the successful path graphically
         for node_index in range(1, len(path)):
-            draw_edge(edges, path[node_index], 'goal_from_start')
+            draw_edge(path[node_index - 1], path[node_index], 'goal_from_start')
 
         # print success and final path
         print("\n\nGoal " + end_node.label + " reached with path: ", end="")
@@ -126,10 +127,10 @@ def main() -> None:
 
         # draw the successful path graphically
         for node_index in range(1, len(path_from_start)):
-            draw_edge(edges, path_from_start[node_index], 'goal_from_start')
+            draw_edge(path_from_start[node_index - 1], path_from_start[node_index], 'goal_from_start')
 
         for node_index in range(1, len(path_from_end)):
-            draw_edge(edges, path_from_end[node_index], 'goal_from_end')
+            draw_edge(path_from_end[node_index - 1], path_from_end[node_index], 'goal_from_end')
 
         # print success and final path
         print("\npath from start: ", end="")
@@ -163,7 +164,7 @@ Returns
 def generate_edges(maze_type: str, node_map: list[list[Node]]):
     maze_image = Image.open(maze_type)
     image_RGB = maze_image.convert("RGB")
-    edges: list[Edge] = []
+    edges = defaultdict(list[str])
 
     for y_index in range(len(node_map)):
         for x_index in range(len(node_map[y_index])):
@@ -173,15 +174,15 @@ def generate_edges(maze_type: str, node_map: list[list[Node]]):
 
             # check for an edge with the node to the left
             if x_index != 0 and not check_wall(curr_node, left_node, image_RGB):
-                edges.append(Edge(left_node.label, curr_node.label, 
-                                  (left_node.x, curr_node.x), (left_node.y, curr_node.y)))
-                plt.plot([left_node.x, curr_node.x], [left_node.y, curr_node.y], color='blue')
+                edges[left_node.label].append(curr_node.label)
+                edges[curr_node.label].append(left_node.label)
+                draw_edge(left_node, curr_node, 'connection')
 
             # check for an edge with the node above
             if y_index != 0 and not check_wall(curr_node, top_node, image_RGB):
-                edges.append(Edge(top_node.label, curr_node.label,
-                                    (top_node.x, curr_node.x), (top_node.y, curr_node.y)))
-                plt.plot([top_node.x, curr_node.x], [top_node.y, curr_node.y], color = 'blue')
+                edges[top_node.label].append(curr_node.label)
+                edges[curr_node.label].append(top_node.label)
+                draw_edge(top_node, curr_node, 'connection')
         
     return edges
 

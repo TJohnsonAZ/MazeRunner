@@ -65,31 +65,6 @@ class Node:
         return self._y
     
 
-# class to keep track of edges between nodes in the maze graph
-class Edge:
-    def __init__(self, start_label: str, end_label: str, start_coords: tuple[int, int], end_coords: tuple[int, int]):
-        self._start_label = start_label
-        self._end_label = end_label
-        self._start_coords = start_coords
-        self._end_coords = end_coords
-
-    @property
-    def start_label(self):
-        return self._start_label
-
-    @property
-    def end_label(self):
-        return self._end_label
-    
-    @property
-    def start_coords(self):
-        return self._start_coords
-    
-    @property
-    def end_coords(self):
-        return self._end_coords
-
-
 """Checks for the presence of a wall between two Nodes and returns the result.
 Determines presence of wall by checking pixel coloration.
 
@@ -144,14 +119,17 @@ current :
     Node to match Edge to self and parent of.
 edge_type :
     Type of Edge to convert found Edge to.
+    connection = Node connections drawn during initial setup.
     from_start = Traversal step in a search beginning at maze start (orange).
     goal_from_start = Step in a successful path starting from maze start (green).
     from_end = Traversal step in a search beginning at maze goal (pink).
     goal_from_end = Step in a successful path starting from maze goal (magenta).
 """
-def draw_edge(edges: list[Edge], current: Node, edge_type: str) -> None:
+def draw_edge(current_node: Node, other_node: Node, edge_type: str) -> None:
     # set color from edge_type
-    if edge_type == 'from_start':
+    if edge_type == 'connection':
+        color = 'blue'
+    elif edge_type == 'from_start':
         color = 'orange'
     elif edge_type == 'goal_from_start':
         color = 'green'
@@ -163,25 +141,12 @@ def draw_edge(edges: list[Edge], current: Node, edge_type: str) -> None:
         raise ValueError("Invalid edge type.")
 
     # find edge whose labels corespond to current Node and its parent
-    if edge_type == 'from_start' or edge_type == 'goal_from_start':
-        for edge in edges:
-            if(isinstance(current.parent, Node)):
-                # recolor found node
-                if (edge.start_label == current.label and edge.end_label == current.parent.label) \
-                or (edge.start_label == current.parent.label and edge.end_label == current.label):
-                    plt.plot(edge.start_coords, edge.end_coords, color=color)
-                    plt.pause(.1500)
-                    break
-    # case for paths beginning at maze goal
-    else:
-        for edge in edges:
-            if(isinstance(current.end_parent, Node)):
-                if (edge.start_label == current.label and edge.end_label == current.end_parent.label) \
-                or (edge.start_label == current.end_parent.label and edge.end_label == current.label):
-                    plt.plot(edge.start_coords, edge.end_coords, color=color)
-                    plt.pause(.1500)
-                    break
+    plt.plot((other_node.x, current_node.x), (other_node.y, current_node.y), color=color)
+    if edge_type != 'connection':
+        plt.pause(.1500)
 
+# TODO: 
+# - fix find_children test
 
 """
 Finds the Node closest to a given point and returns it.
